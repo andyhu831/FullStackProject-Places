@@ -8,14 +8,14 @@ import { AuthContext } from "../../shared/context/auth-context";
 import { VALIDATOR_REQUIRE } from "../../shared/util/validators";
 import { useForm } from "../../shared/hooks/form-hook";
 import { Card } from "../../shared/";
+import { useHttpClient } from "../../shared/hooks/http-hook";
 
 import "./Auth.css";
 
 const Auth = () => {
   const auth = useContext(AuthContext);
   const [isLogin, setIsLogin] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState();
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
 
   const [formState, inputHandler, setFormData] = useForm(
     {
@@ -34,34 +34,40 @@ const Auth = () => {
   const authSubmitHandler = async (event) => {
     event.preventDefault();
     if (isLogin) {
+      try {
+        const responseData = await sendRequest(
+          "http://localhost:5000/api/users/login",
+          "POST",
+          JSON.stringify({
+            username: formState.inputs.username.value,
+            password: formState.inputs.password.value,
+          }),
+          {
+            "Content-Type": "application/json",
+          }
+        );
+
+        auth.login(responseData.user.id);
+      } catch (err) {}
     } else {
       try {
-        setIsLoading(true);
-        const response = await fetch("http://localhost:5000/api/users/signup", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
+        const responseData =await sendRequest(
+          "http://localhost:5000/api/users/signup",
+          "POST",
+
+          JSON.stringify({
             name: formState.inputs.name.value,
             username: formState.inputs.username.value,
             password: formState.inputs.password.value,
           }),
-        });
-        const data = await response.json();
-        if (!response.ok) {
-          console.log(data);
-          throw new Error(data.ErrorMessage);
-        }
-        setIsLoading(false);
-        auth.login();
-      } catch (err) {
-        console.log(err);
-        setIsLoading(false);
-        setError(err.message || "An unknown error occurs");
-      }
-    }
+          {
+            "Content-Type": "application/json",
+          }
+        );
 
+        auth.login(responseData.user.id);
+      } catch (err) {}
+    }
   };
 
   const switchModeHandler = () => {
@@ -85,13 +91,9 @@ const Auth = () => {
     setIsLogin((prevMode) => !prevMode);
   };
 
-  const errorHandler = () => {
-    setError(null);
-  };
-
   return (
     <>
-      <ErrorModal error={error} onClear={errorHandler} />
+      <ErrorModal error={error} onClear={clearError} />
       <div className="authentication">
         {isLoading && <LoadingSpinner asOverlay />}
         <Card>

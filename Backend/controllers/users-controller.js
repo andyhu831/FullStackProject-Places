@@ -10,7 +10,7 @@ const getUsers = async (req, res, next) => {
   } catch (err) {
     return next(new HttpError("Getting users failed", 500));
   }
-  res.json({users: users.map(user => user.toObject({getters: true}))})
+  res.json({ users: users.map((user) => user.toObject({ getters: true })) });
 };
 
 const signup = async (req, res, next) => {
@@ -18,7 +18,7 @@ const signup = async (req, res, next) => {
   if (!error.isEmpty()) {
     return next(new HttpError("Please enter an username", 401));
   }
-  const { name, username, password} = req.body;
+  const { name, username, password } = req.body;
 
   let existingUser;
   try {
@@ -35,7 +35,7 @@ const signup = async (req, res, next) => {
     username,
     password,
     image: "https://picsum.photos/200/300",
-    places: []
+    places: [],
   });
   try {
     await createdUser.save();
@@ -58,7 +58,10 @@ const login = async (req, res, next) => {
     return next(new HttpError("Invalid credentials", 401));
   }
 
-  res.json({ message: "Logged in" });
+  res.json({
+    message: "Logged in",
+    user: identifiedUser.toObject({ getters: true }),
+  });
 };
 
 exports.getUsers = getUsers;
